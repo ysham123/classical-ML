@@ -21,7 +21,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.4"]
-boost = ["xgboost>=2.0"]
 
 [project.scripts]
 classical-ml = "classical_ml.__main__:main"
