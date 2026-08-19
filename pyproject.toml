@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "classical-ml"
+version = "1.0.0"
+description = "Three classical machine learning projects worked from Raschka's Machine Learning with PyTorch and Scikit-Learn"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Yosef Shammout" }]
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scikit-learn>=1.4",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "nltk>=3.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+boost = ["xgboost>=2.0"]
+
+[project.scripts]
+classical-ml = "classical_ml.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "needs_data: requires a dataset that is downloaded rather than bundled (make data)",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+# E501: line length is enforced by the formatter above, not the linter.
+# B905: every zip() here pairs sequences of known equal length.
+# SIM300 misreads `module.PROJECT == name` and subset checks as Yoda conditions.
+ignore = ["E501", "B905", "SIM300"]
