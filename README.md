@@ -12,7 +12,7 @@ the tables below are generated rather than typed by hand.
 | --- | --- | --- | --- | --- |
 | [`diagnosis`](#1-diagnosing-breast-cancer) | Binary classification | 569 biopsies, 30 features | 0.998 ROC AUC, 2 missed malignancies in 114 cases | 35s |
 | [`sentiment`](#2-sentiment-on-50000-movie-reviews) | Text classification | 50,000 IMDb reviews | 0.899 test accuracy, 0.962 ROC AUC | 4m 14s |
-| [`housing`](#3-predicting-house-prices) | Regression | 2,929 house sales | 0.85 test R2, up from 0.75 for a linear fit | 3s |
+| [`housing`](#3-predicting-house-prices) | Regression | 2,929 house sales | 0.856 test R2, up from 0.752 for a linear fit | 4s |
 
 ```bash
 git clone https://github.com/ysham123/classical-ML.git
@@ -205,6 +205,34 @@ usual forest overfit, visible as the tighter band of training residuals below.
 
 ![Tree regressors](outputs/housing/tree_regressors.png)
 
+**Boosting.** XGBoost takes the best test score in the project, **0.856**, with a mean
+absolute error of 19,779 USD. More interesting than the score is the shape of the fit:
+where the forest memorises the training set (0.976 train against 0.847 test), the
+booster lands at 0.875 against 0.856, a gap of two points rather than thirteen.
+Subsampling, an L2 penalty on the leaf weights and early stopping are all doing work
+there.
+
+Early stopping needs a set the model is not fitted on, and it must not be the test set:
+choosing the stopping round on the test set is how a held-out score quietly stops being
+held out. So 20% of the training half is cut off for that decision, the booster stops at
+round 113 of a possible 2,000, and the test set stays untouched until the final score.
+
+![Gradient boosting](outputs/housing/gradient_boosting.png)
+
+Every model in the project, scored the same way on the same split:
+
+![Model comparison](outputs/housing/model_comparison.png)
+
+| Model | Test R2 |
+| --- | --- |
+| XGBoost | 0.856 |
+| Random forest | 0.847 |
+| Decision tree | 0.813 |
+| Ordinary least squares | 0.752 |
+| Ridge | 0.752 |
+| Lasso | 0.752 |
+| Elastic net | 0.727 |
+
 ---
 
 ## Algorithms implemented from scratch
@@ -248,7 +276,7 @@ src/classical_ml/
 ├── report.py            timing, metric collection, generated results tables
 └── compat.py            shims for scikit-learn API changes since the book
 outputs/                 figures, results.json and the generated RESULTS.md
-tests/                   44 tests, including the gradient check
+tests/                   46 tests, including the gradient check
 ```
 
 ## Reproducing
@@ -258,7 +286,7 @@ Every result is seeded. `make run` regenerates every figure, `outputs/results.js
 with the library versions that produced them.
 
 ```bash
-make test    # 44 tests
+make test    # 46 tests
 make lint    # ruff
 ```
 
@@ -269,6 +297,14 @@ marked `needs_data`.
 
 Datasets: Iris, Wine and Breast Cancer Wisconsin ship with scikit-learn. Ames Housing
 and the IMDb review corpus are downloaded once into `data/` (gitignored) by `make data`.
+
+On macOS, XGBoost needs the OpenMP runtime, which Apple's toolchain does not ship:
+
+```bash
+brew install libomp
+```
+
+Linux wheels carry their own, so `make setup` is enough there and in CI.
 
 ## Notes on the source material
 

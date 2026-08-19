@@ -115,7 +115,7 @@
     "housing": {
       "project": "housing",
       "description": "Predicting house prices in Ames, Iowa",
-      "seconds": 3.25,
+      "seconds": 3.59,
       "metrics": {
         "strongest_correlation_with_price": 0.7991380595989256,
         "gd_standardized_slope": 0.6986686281083272,
@@ -134,13 +134,22 @@
         "polynomial_degree_2_r2": 0.6927823564507078,
         "polynomial_degree_3_r2": 0.6997332379865049,
         "polynomial_degree_1_r2": 0.6386216382995366,
+        "decision_tree_all_features_test_r2": 0.8125213899787354,
         "decision_tree_r2_gr_liv_area": 0.5144569334885711,
         "random_forest_train_r2": 0.976134979054554,
-        "random_forest_test_r2": 0.8470146436086696
+        "random_forest_test_r2": 0.8470146436086696,
+        "xgboost_best_iteration": 113,
+        "xgboost_rounds_available": 164,
+        "xgboost_train_r2": 0.8753904700279236,
+        "xgboost_test_r2": 0.8561434745788574,
+        "xgboost_test_mae": 19779.27734375,
+        "xgboost_top_feature": "Overall Qual"
       },
       "figures": [
         "correlation_heatmap.png",
+        "gradient_boosting.png",
         "linear_fits.png",
+        "model_comparison.png",
         "polynomial_regression.png",
         "residuals.png",
         "scatterplot_matrix.png",

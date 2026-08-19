@@ -104,7 +104,7 @@ Runtime 253.96s. Figures: `out_of_core.png`, `sentiment_performance.png`, `top_t
 
 ## housing: Predicting house prices in Ames, Iowa
 
-Runtime 3.25s. Figures: `correlation_heatmap.png`, `linear_fits.png`, `polynomial_regression.png`, `residuals.png`, `scatterplot_matrix.png`, `tree_regressors.png`
+Runtime 3.59s. Figures: `correlation_heatmap.png`, `gradient_boosting.png`, `linear_fits.png`, `model_comparison.png`, `polynomial_regression.png`, `residuals.png`, `scatterplot_matrix.png`, `tree_regressors.png`
 
 | Metric | Value |
 | --- | --- |
@@ -125,6 +125,13 @@ Runtime 3.25s. Figures: `correlation_heatmap.png`, `linear_fits.png`, `polynomia
 | polynomial_degree_2_r2 | 0.6928 |
 | polynomial_degree_3_r2 | 0.6997 |
 | polynomial_degree_1_r2 | 0.6386 |
+| decision_tree_all_features_test_r2 | 0.8125 |
 | decision_tree_r2_gr_liv_area | 0.5145 |
 | random_forest_train_r2 | 0.9761 |
 | random_forest_test_r2 | 0.847 |
+| xgboost_best_iteration | 113 |
+| xgboost_rounds_available | 164 |
+| xgboost_train_r2 | 0.8754 |
+| xgboost_test_r2 | 0.8561 |
+| xgboost_test_mae | 1.978e+04 |
+| xgboost_top_feature | Overall Qual |

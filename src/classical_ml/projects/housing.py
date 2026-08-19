@@ -18,6 +18,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.tree import DecisionTreeRegressor
+from xgboost import XGBRegressor
 
 from .. import datasets
 from ..algorithms import LinearRegressionGD
@@ -77,8 +78,107 @@ def _regression_line(ax, X, y, model, xlabel: str, ylabel: str, title: str) -> N
     ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
 
 
+def _gradient_boosting(X_train, y_train, X_test, y_test, feature_names) -> dict[str, float]:
+    """Gradient-boosted trees, stopped early on a validation fold cut from the training data.
+
+    Boosting keeps fitting new trees to the residuals of the ones before it, so it will
+    happily run past the point where it is still learning anything general. The stopping
+    round has to be chosen on data the model is not fitted on, and it must not be the
+    test set: using the test set to decide when to stop is how a held-out score quietly
+    stops being held out. Here 20% of the training half is set aside for that decision
+    and the test set is never touched until the final score.
+    """
+    X_fit, X_valid, y_fit, y_valid = train_test_split(X_train, y_train, test_size=0.2, random_state=123)
+
+    booster = XGBRegressor(
+        n_estimators=2000,
+        learning_rate=0.05,
+        max_depth=4,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        min_child_weight=5,
+        reg_lambda=1.0,
+        random_state=1,
+        n_jobs=2,
+        eval_metric="rmse",
+        early_stopping_rounds=50,
+    )
+    booster.fit(X_fit, y_fit, eval_set=[(X_fit, y_fit), (X_valid, y_valid)], verbose=False)
+
+    history = booster.evals_result()
+    train_rmse = history["validation_0"]["rmse"]
+    valid_rmse = history["validation_1"]["rmse"]
+    stopped_at = int(booster.best_iteration)
+
+    train_r2 = float(r2_score(y_train, booster.predict(X_train)))
+    test_r2 = float(r2_score(y_test, booster.predict(X_test)))
+    test_mae = float(mean_absolute_error(y_test, booster.predict(X_test)))
+    print(f"  xgboost:       R2 train {train_r2:.3f}, test {test_r2:.3f} "
+          f"(stopped at round {stopped_at} of {len(valid_rmse)}, test MAE {test_mae:,.0f} USD)")
+
+    importances = booster.feature_importances_
+    order = np.argsort(importances)[::-1]
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 3.9))
+    axes[0].plot(train_rmse, color=PALETTE[0], label="training")
+    axes[0].plot(valid_rmse, color=PALETTE[1], label="validation")
+    axes[0].axvline(stopped_at, color="#222222", linestyle="--", linewidth=1,
+                    label=f"early stop at {stopped_at}")
+    axes[0].set(xlabel="boosting round", ylabel="RMSE [USD]",
+                title="Validation RMSE stops improving well before round 2,000")
+    axes[0].legend(loc="upper right")
+
+    axes[1].barh(range(len(order)), importances[order][::-1], color=PALETTE[0], height=0.6)
+    axes[1].set_yticks(range(len(order)), [feature_names[i] for i in order][::-1], fontsize=8)
+    axes[1].set(xlabel="importance (gain)", title="What the booster splits on")
+    axes[1].grid(axis="y", visible=False)
+
+    predicted = booster.predict(X_test)
+    axes[2].scatter(y_test, predicted, s=9, alpha=0.35, color=PALETTE[0], edgecolor="none")
+    limits = [min(y_test.min(), predicted.min()), max(y_test.max(), predicted.max())]
+    axes[2].plot(limits, limits, color="#222222", linestyle="--", linewidth=1)
+    axes[2].set(xlabel="actual price [USD]", ylabel="predicted price [USD]",
+                title=f"Held-out predictions (R2 = {test_r2:.3f})")
+    fig.tight_layout()
+    save(fig, PROJECT, "gradient_boosting")
+
+    return {
+        "xgboost_best_iteration": stopped_at,
+        "xgboost_rounds_available": len(valid_rmse),
+        "xgboost_train_r2": train_r2,
+        "xgboost_test_r2": test_r2,
+        "xgboost_test_mae": test_mae,
+        "xgboost_top_feature": feature_names[order[0]],
+    }
+
+
+def _model_comparison(metrics: dict[str, float]) -> None:
+    """One chart of every model in the project, scored the same way on the same split."""
+    labels = {
+        "ols_test_r2": "ordinary least squares",
+        "ridge_test_r2": "ridge",
+        "lasso_test_r2": "lasso",
+        "elastic_net_test_r2": "elastic net",
+        "decision_tree_all_features_test_r2": "decision tree",
+        "random_forest_test_r2": "random forest",
+        "xgboost_test_r2": "xgboost",
+    }
+    scores = {label: metrics[key] for key, label in labels.items() if key in metrics}
+    order = sorted(scores, key=scores.get)
+
+    fig, ax = plt.subplots(figsize=(6.4, 3.8))
+    colours = [PALETTE[2] if name in ("random forest", "xgboost") else PALETTE[0] for name in order]
+    ax.barh(order, [scores[name] for name in order], color=colours, height=0.62)
+    for index, name in enumerate(order):
+        ax.text(scores[name] + 0.004, index, f"{scores[name]:.3f}", va="center", fontsize=8)
+    ax.set(xlim=(0.6, 0.93), xlabel="test set R2",
+           title="Ames house prices: test R2 by model")
+    ax.grid(axis="y", visible=False)
+    save(fig, PROJECT, "model_comparison")
+
+
 def run() -> dict[str, float]:
-    """Fit and compare eight regressors on Ames Housing sale prices."""
+    """Fit and compare every regressor in the project on Ames Housing sale prices."""
     frame = datasets.ames_housing()
     columns = list(frame.columns)
     print(f"  Ames Housing: {frame.shape[0]} rows, {frame.shape[1]} columns after dropping missing values")
@@ -201,6 +301,10 @@ def run() -> dict[str, float]:
     forest_test_r2 = float(r2_score(y_test, forest.predict(X_test)))
     print(f"  random forest: R2 train {forest_train_r2:.3f}, test {forest_test_r2:.3f}")
 
+    # A single tree on the same five predictors, so the ensembles have a fair comparison.
+    single_tree = DecisionTreeRegressor(max_depth=5, random_state=1).fit(X_train, y_train)
+    metrics["decision_tree_all_features_test_r2"] = float(r2_score(y_test, single_tree.predict(X_test)))
+
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4))
     _regression_line(axes[0], X, y, tree, "Gr Liv Area [sq ft]", "SalePrice [USD]",
                      "Decision tree regressor (depth 3)")
@@ -220,4 +324,7 @@ def run() -> dict[str, float]:
         "random_forest_train_r2": forest_train_r2,
         "random_forest_test_r2": forest_test_r2,
     })
+
+    metrics.update(_gradient_boosting(X_train, y_train, X_test, y_test, list(features)))
+    _model_comparison(metrics)
     return metrics
