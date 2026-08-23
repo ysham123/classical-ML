@@ -1,26 +1,29 @@
 # Classical machine learning
 
-Three end-to-end machine learning projects built with scikit-learn, plus the algorithms
-behind them implemented from scratch in NumPy and checked against the library versions.
+Four end-to-end machine learning projects, plus the algorithms behind them implemented
+from scratch in NumPy and checked against the library versions.
 
-Worked from *Machine Learning with PyTorch and Scikit-Learn* (Raschka, Liu and
-Mirjalili), chapters 2 to 11. Each project runs from raw data to a single held-out
-evaluation, writes its figures to `outputs/`, and returns every number it measured, so
-the tables below are generated rather than typed by hand.
+The first three are built with scikit-learn, worked from *Machine Learning with PyTorch
+and Scikit-Learn* (Raschka, Liu and Mirjalili), chapters 2 to 11. The fourth extends past
+the book into time series analysis and stochastic modeling, worked with statsmodels and
+simulations checked against closed-form theory. Each project runs from raw data to a
+single held-out evaluation, writes its figures to `outputs/`, and returns every number it
+measured, so the tables below are generated rather than typed by hand.
 
 | Project | Problem | Data | Headline result | Runtime |
 | --- | --- | --- | --- | --- |
 | [`diagnosis`](#1-diagnosing-breast-cancer) | Binary classification | 569 biopsies, 30 features | 0.998 ROC AUC, 2 missed malignancies in 114 cases | 35s |
 | [`sentiment`](#2-sentiment-on-50000-movie-reviews) | Text classification | 50,000 IMDb reviews | 0.899 test accuracy, 0.962 ROC AUC | 4m 14s |
 | [`housing`](#3-predicting-house-prices) | Regression | 2,929 house sales | 0.856 test R2, up from 0.752 for a linear fit | 4s |
+| [`timeseries`](#4-time-series-analysis-and-stochastic-modeling) | Forecasting and stochastic simulation | 526 months of Mauna Loa CO2, plus simulated processes | SARIMA 0.35 ppm test MAE (vs 1.88 for a seasonal-naive baseline) | 3s |
 
 ```bash
 git clone https://github.com/ysham123/classical-ML.git
 cd classical-ML
 make setup                       # virtual environment and dependencies
 make data                        # Ames Housing (4 MB) and IMDb reviews (84 MB)
-make run                         # all three projects
-python -m classical_ml diagnosis # or just one; diagnosis needs no download
+make run                         # all four projects
+python -m classical_ml diagnosis # or just one; diagnosis and timeseries need no download
 ```
 
 ---
@@ -235,6 +238,73 @@ Every model in the project, scored the same way on the same split:
 
 ---
 
+## 4. Time series analysis and stochastic modeling
+
+`src/classical_ml/projects/timeseries.py` · [figures](outputs/timeseries)
+
+Two different questions under one project: what a time series looks like when it can
+only be observed, and what one looks like when its statistics are known in advance
+because it was simulated. The first half forecasts 44 years of atmospheric CO2 readings
+from Mauna Loa, 526 months from 1958 to 2001, shipped inside statsmodels rather than
+downloaded. The second half simulates the stochastic processes behind option pricing and
+regime-switching models, checked against closed-form theory rather than against each
+other.
+
+**Is it stationary.** An augmented Dickey-Fuller test on the raw series fails to reject a
+unit root (p = 0.999); on the first difference it rejects decisively (p = 6.7e-05). That
+is the standard justification for differencing once before fitting an ARIMA-family model,
+checked here rather than assumed.
+
+![Decomposition](outputs/timeseries/decomposition.png)
+
+**Forecasting 24 months nobody saw.** Three forecasters, fit on the first 502 months and
+scored on the last 24: a seasonal-naive baseline that just repeats last year (0.508%
+MAPE), Holt's linear trend method written from scratch in `algorithms/timeseries.py`
+(0.632% MAPE, worse than the naive baseline because it has a trend but no seasonal term
+at all, so its forecast drifts off the yearly cycle instead of tracking it), and a
+SARIMA(1,1,1)(1,1,1,12) model (0.094% MAPE, a 0.35 ppm mean absolute error). The seasonal
+component is most of what separates SARIMA from the other two: a model with a trend and
+nothing else does worse than a model with no trend and a seasonal repeat.
+
+![Forecast](outputs/timeseries/forecast.png)
+
+**Random walk against mean reversion.** A random walk and an Ornstein-Uhlenbeck process,
+simulated on the same clock with the same noise scale (`algorithms/stochastic.py`),
+diverge completely: the random walk's variance grows linearly with time (empirical 8.27
+against a theoretical 8.00 at t = 8), while the mean-reverting process's variance
+converges to a fixed value (empirical 0.098 against a theoretical 0.100). The same ADF
+test used on the CO2 series tells the two apart cleanly: p = 0.545 on the random walk
+(fails to reject a unit root), p = 0.0016 on the mean-reverting process (rejects it).
+
+![Random walk vs mean reversion](outputs/timeseries/random_walk_vs_mean_reversion.png)
+
+**Pricing an option two ways.** Geometric Brownian motion, simulated from its exact
+solution rather than an Euler discretization, feeds a Monte Carlo estimate of a European
+call (spot 100, strike 100, risk-free rate 3%, volatility 20%, one year to expiry). The
+closed-form Black-Scholes price is 9.413; Monte Carlo with 100,000 paths lands at 9.436,
+half a standard error away, and the estimate's standard error shrinks from 0.909 at 1,000
+paths to 0.045 at 100,000, the square-root-of-n rate a Monte Carlo estimate is supposed to
+converge at.
+
+![Option pricing](outputs/timeseries/option_pricing.png)
+
+**A regime-switching economy.** A two-state Markov chain (expansion, contraction) with
+0.9 and 0.7 persistence probabilities is simulated for 20,000 steps. The empirical time
+spent in each state (74.9% expansion) matches the stationary distribution computed
+directly from the transition matrix's dominant eigenvector (75.0%) to within 0.08
+percentage points, without the simulation ever being told what that distribution is.
+
+![Markov regime switching](outputs/timeseries/markov_regime_switching.png)
+
+Worth stating plainly: Holt's method, the only from-scratch forecaster in the comparison,
+is also the weakest one on this series. That is not a flaw in the implementation (it
+matches statsmodels' own Holt to floating-point precision, see the algorithms table
+below); it is a model with no seasonal term applied to a series whose seasonality is most
+of the signal. The honest baseline for SARIMA to beat is the seasonal-naive one, and
+SARIMA beats it by more than five times on mean absolute error.
+
+---
+
 ## Algorithms implemented from scratch
 
 Everything in `src/classical_ml/algorithms/` is written directly in NumPy. Each one is
@@ -252,6 +322,11 @@ them alongside the library implementations.
 | `SBS` | Sequential backward feature selection | Removes one feature per step and leaves the caller's estimator unfitted |
 | `MajorityVoteClassifier` | Voting ensemble on the estimator API | Passes `clone`, cross-validates, exposes nested parameters to `GridSearchCV` |
 | `NeuralNetMLP` | One hidden layer, backpropagation by hand | Every gradient checked against central finite differences to 1e-6 |
+| `simple_exponential_smoothing` | One-step-ahead forecasts under a single smoothed level | Fitted values match `statsmodels.tsa.holtwinters.SimpleExpSmoothing` to floating-point precision |
+| `holt_linear_trend` | Level and trend state under Holt's linear method | Level and trend arrays match `statsmodels.tsa.holtwinters.Holt` to floating-point precision |
+| `simulate_random_walk`, `simulate_ornstein_uhlenbeck` | Brownian motion and mean-reverting diffusion by Euler-Maruyama | Empirical variance across paths matches closed-form theory within 10%; an ADF test tells the two processes apart |
+| `simulate_gbm`, `black_scholes_call`, `monte_carlo_call_price` | Geometric Brownian motion and the option price it implies | A 200,000-path Monte Carlo call price lands within 4 standard errors of the closed-form Black-Scholes price |
+| `simulate_markov_chain`, `markov_stationary_distribution` | A discrete-state Markov chain and its long-run distribution | A 50,000-step simulated chain's state frequencies match the eigenvector-computed stationary distribution to within 0.02 |
 
 The gradient check is the one worth pointing at. An accuracy threshold does not catch a
 subtly wrong derivative, because gradient descent tends to make progress anyway; a
@@ -261,22 +336,25 @@ finite-difference comparison on every weight and bias does.
 
 ```
 src/classical_ml/
-├── projects/            three end-to-end projects, each with run()
+├── projects/            four end-to-end projects, each with run()
 │   ├── diagnosis.py
 │   ├── sentiment.py
-│   └── housing.py
+│   ├── housing.py
+│   └── timeseries.py
 ├── algorithms/          the models built from scratch in NumPy
 │   ├── linear.py
 │   ├── decomposition.py
 │   ├── feature_selection.py
 │   ├── ensemble.py
-│   └── neural_net.py
+│   ├── neural_net.py
+│   ├── timeseries.py
+│   └── stochastic.py
 ├── datasets.py          loaders with an on-disk cache
 ├── plotting.py          decision regions and the shared figure style
 ├── report.py            timing, metric collection, generated results tables
 └── compat.py            shims for scikit-learn API changes since the book
 outputs/                 figures, results.json and the generated RESULTS.md
-tests/                   46 tests, including the gradient check
+tests/                   64 tests, including the gradient check
 ```
 
 ## Reproducing
@@ -286,17 +364,19 @@ Every result is seeded. `make run` regenerates every figure, `outputs/results.js
 with the library versions that produced them.
 
 ```bash
-make test    # 46 tests
+make test    # 64 tests
 make lint    # ruff
 ```
 
-CI runs the linter, the test suite and the `diagnosis` project on Python 3.11, 3.12 and
-3.13. It sets `CLASSICAL_ML_OFFLINE=1`, so anything that would silently reach for the
-network fails instead; the tests that need a downloaded corpus are skipped there and
-marked `needs_data`.
+CI runs the linter, the test suite and the `diagnosis` and `timeseries` projects on
+Python 3.11, 3.12 and 3.13. It sets `CLASSICAL_ML_OFFLINE=1`, so anything that would
+silently reach for the network fails instead; the tests that need a downloaded corpus are
+skipped there and marked `needs_data`.
 
-Datasets: Iris, Wine and Breast Cancer Wisconsin ship with scikit-learn. Ames Housing
-and the IMDb review corpus are downloaded once into `data/` (gitignored) by `make data`.
+Datasets: Iris, Wine and Breast Cancer Wisconsin ship with scikit-learn, and Mauna Loa
+CO2 ships with statsmodels, so none of the four are downloaded or gitignored. Ames
+Housing and the IMDb review corpus are the two that are downloaded once into `data/`
+(gitignored) by `make data`.
 
 On macOS, XGBoost needs the OpenMP runtime, which Apple's toolchain does not ship:
 

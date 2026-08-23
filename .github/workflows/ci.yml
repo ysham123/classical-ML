@@ -37,8 +37,8 @@ jobs:
           CLASSICAL_ML_OFFLINE: "1"
         run: pytest -m "not needs_data" -q
 
-      - name: Run the project that needs no download
+      - name: Run the projects that need no download
         env:
           CLASSICAL_ML_OFFLINE: "1"
           CLASSICAL_ML_OUTPUTS: ${{ runner.temp }}/outputs
-        run: python -m classical_ml diagnosis
+        run: python -m classical_ml diagnosis timeseries

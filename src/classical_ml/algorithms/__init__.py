@@ -10,6 +10,16 @@ from .ensemble import MajorityVoteClassifier, ensemble_error
 from .feature_selection import SBS
 from .linear import AdalineGD, AdalineSGD, LinearRegressionGD, LogisticRegressionGD, Perceptron
 from .neural_net import NeuralNetMLP, compute_mse_and_acc, int_to_onehot, minibatch_generator, mse_loss, train
+from .stochastic import (
+    black_scholes_call,
+    markov_stationary_distribution,
+    monte_carlo_call_price,
+    simulate_gbm,
+    simulate_markov_chain,
+    simulate_ornstein_uhlenbeck,
+    simulate_random_walk,
+)
+from .timeseries import holt_linear_trend, simple_exponential_smoothing
 
 __all__ = [
     "SBS",
@@ -20,12 +30,21 @@ __all__ = [
     "MajorityVoteClassifier",
     "NeuralNetMLP",
     "Perceptron",
+    "black_scholes_call",
     "compute_mse_and_acc",
     "ensemble_error",
+    "holt_linear_trend",
     "int_to_onehot",
     "lda_from_scratch",
+    "markov_stationary_distribution",
     "minibatch_generator",
+    "monte_carlo_call_price",
     "mse_loss",
     "pca_from_scratch",
+    "simple_exponential_smoothing",
+    "simulate_gbm",
+    "simulate_markov_chain",
+    "simulate_ornstein_uhlenbeck",
+    "simulate_random_walk",
     "train",
 ]

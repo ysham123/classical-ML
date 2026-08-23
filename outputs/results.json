@@ -155,6 +155,45 @@
         "scatterplot_matrix.png",
         "tree_regressors.png"
       ]
+    },
+    "timeseries": {
+      "project": "timeseries",
+      "description": "Forecasting Mauna Loa CO2 and simulating stochastic processes",
+      "seconds": 2.72,
+      "metrics": {
+        "adf_pvalue_level": 0.9989084530577083,
+        "adf_pvalue_differenced": 6.716044028800465e-05,
+        "seasonal_naive_test_mae": 1.8822916666666576,
+        "seasonal_naive_test_rmse": 2.0664893237081996,
+        "seasonal_naive_test_mape": 0.5084497077942033,
+        "holt_test_mae": 2.3446576263309993,
+        "holt_test_rmse": 2.7877144533741944,
+        "holt_test_mape": 0.6316265124953712,
+        "sarima_test_mae": 0.3493082093282401,
+        "sarima_test_rmse": 0.42391187156107196,
+        "sarima_test_mape": 0.09421795593698143,
+        "random_walk_adf_pvalue": 0.5445008230853872,
+        "mean_reverting_adf_pvalue": 0.001563132378920217,
+        "random_walk_variance_empirical": 8.264502774173703,
+        "random_walk_variance_theory": 8.0,
+        "mean_reverting_variance_empirical": 0.09789784721359363,
+        "mean_reverting_variance_theory": 0.1,
+        "black_scholes_call_price": 9.413403383853016,
+        "monte_carlo_call_price": 9.435603935142083,
+        "monte_carlo_standard_error": 0.04466474295613263,
+        "monte_carlo_absolute_error": 0.022200551289067505,
+        "markov_empirical_expansion": 0.7491625418729063,
+        "markov_stationary_expansion": 0.7500000000000001,
+        "markov_max_absolute_difference": 0.0008374581270937931
+      },
+      "figures": [
+        "acf_pacf.png",
+        "decomposition.png",
+        "forecast.png",
+        "markov_regime_switching.png",
+        "option_pricing.png",
+        "random_walk_vs_mean_reversion.png"
+      ]
     }
   }
 }

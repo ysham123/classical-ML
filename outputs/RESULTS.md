@@ -135,3 +135,34 @@ Runtime 3.59s. Figures: `correlation_heatmap.png`, `gradient_boosting.png`, `lin
 | xgboost_test_r2 | 0.8561 |
 | xgboost_test_mae | 1.978e+04 |
 | xgboost_top_feature | Overall Qual |
+
+## timeseries: Forecasting Mauna Loa CO2 and simulating stochastic processes
+
+Runtime 2.72s. Figures: `acf_pacf.png`, `decomposition.png`, `forecast.png`, `markov_regime_switching.png`, `option_pricing.png`, `random_walk_vs_mean_reversion.png`
+
+| Metric | Value |
+| --- | --- |
+| adf_pvalue_level | 0.9989 |
+| adf_pvalue_differenced | 6.716e-05 |
+| seasonal_naive_test_mae | 1.882 |
+| seasonal_naive_test_rmse | 2.066 |
+| seasonal_naive_test_mape | 0.5084 |
+| holt_test_mae | 2.345 |
+| holt_test_rmse | 2.788 |
+| holt_test_mape | 0.6316 |
+| sarima_test_mae | 0.3493 |
+| sarima_test_rmse | 0.4239 |
+| sarima_test_mape | 0.09422 |
+| random_walk_adf_pvalue | 0.5445 |
+| mean_reverting_adf_pvalue | 0.001563 |
+| random_walk_variance_empirical | 8.265 |
+| random_walk_variance_theory | 8 |
+| mean_reverting_variance_empirical | 0.0979 |
+| mean_reverting_variance_theory | 0.1 |
+| black_scholes_call_price | 9.413 |
+| monte_carlo_call_price | 9.436 |
+| monte_carlo_standard_error | 0.04466 |
+| monte_carlo_absolute_error | 0.0222 |
+| markov_empirical_expansion | 0.7492 |
+| markov_stationary_expansion | 0.75 |
+| markov_max_absolute_difference | 0.0008375 |

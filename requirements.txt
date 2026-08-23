@@ -5,4 +5,5 @@ scipy>=1.10
 matplotlib>=3.7
 nltk>=3.8
 xgboost>=2.0
+statsmodels>=0.14
 pytest>=7.4

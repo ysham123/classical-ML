@@ -18,6 +18,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from sklearn.datasets import load_breast_cancer, load_iris, load_wine
+from statsmodels.datasets import co2
 
 from .paths import data_path
 
@@ -107,6 +108,20 @@ def breast_cancer() -> Dataset:
     raw = load_breast_cancer()
     y = 1 - raw.target
     return Dataset(raw.data, y, list(raw.feature_names), ["benign", "malignant"])
+
+
+def mauna_loa_co2() -> pd.Series:
+    """Weekly Mauna Loa CO2 readings, 1958 to 2001, resampled to a monthly series.
+
+    Ships inside statsmodels rather than scikit-learn, so no download is involved. The
+    weekly readings have gaps where a measurement was missed; resampling to monthly
+    means and interpolating the handful of remaining gaps leaves a clean series with a
+    trend and a strong yearly cycle, which is the point of using it.
+    """
+    weekly = co2.load_pandas().data["co2"]
+    monthly = weekly.resample("MS").mean().interpolate("linear")
+    monthly.name = "co2"
+    return monthly
 
 
 # --------------------------------------------------------------------------------------

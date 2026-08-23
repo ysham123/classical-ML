@@ -2,15 +2,16 @@ VENV := .venv
 PYTHON := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 
-.PHONY: help setup data run test lint clean diagnosis sentiment housing
+.PHONY: help setup data run test lint clean diagnosis sentiment housing timeseries
 
 help:
 	@echo "setup      create the virtual environment and install the package"
 	@echo "data       download the Ames Housing and IMDb datasets into data/"
-	@echo "run        run all three projects and refresh outputs/"
+	@echo "run        run all four projects and refresh outputs/"
 	@echo "diagnosis  run the breast cancer project only (no download needed)"
 	@echo "sentiment  run the IMDb project only"
 	@echo "housing    run the Ames Housing project only"
+	@echo "timeseries run the time series and stochastic modeling project only (no download needed)"
 	@echo "test       run the test suite"
 	@echo "lint       run ruff over the package and tests"
 	@echo "clean      remove generated figures and caches"
@@ -26,7 +27,7 @@ data:
 run:
 	$(PYTHON) -m classical_ml --all
 
-diagnosis sentiment housing:
+diagnosis sentiment housing timeseries:
 	$(PYTHON) -m classical_ml $@
 
 test:
